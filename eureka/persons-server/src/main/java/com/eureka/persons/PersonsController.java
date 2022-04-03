@@ -26,7 +26,10 @@ public class PersonsController {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Person> list() {
-        return new ArrayList<>();
+        ArrayList<Person> persons = new ArrayList<>();
+        persons.addAll(personService.findAll());
+        persons.sort(Comparator.comparing(Person::getId));
+        return persons;
     }
 
     /**
@@ -36,6 +39,10 @@ public class PersonsController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public void create(@RequestBody Person person, BindingResult result) {
+        if(!result.hasErrors())
+            personService.save(person);
+        else
+            throw new PersonsException(HttpStatus.BAD_REQUEST, "nu se poate adauga persoana");
     }
 
     /**
@@ -48,7 +55,8 @@ public class PersonsController {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Person show(@PathVariable Long id) {
-        return new Person();
+        public Person show(@PathVariable Long id) {
+            return personService.findById(id).orElseThrow(()->new NotFoundException(Person.class,id));
     }
 
     /**
@@ -62,6 +70,15 @@ public class PersonsController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
     public void update(@RequestBody Person updatedPerson, @PathVariable Long id) {
+            Person resultPerson = personService.findById(id).orElseThrow(()->new NotFoundException(Person.class,id));
+            resultPerson.setFirstName(updatedPerson.getFirstName());
+            resultPerson.setLastName(updatedPerson.getLastName());
+            resultPerson.setUsername(updatedPerson.getUsername());
+            resultPerson.setPassword(updatedPerson.getPassword());
+            resultPerson.setHiringDate(updatedPerson.getHiringDate());
+            resultPerson.setNewPassword(updatedPerson.getNewPassword());
+            personService.save(resultPerson);
+        }
     }
 
     /**
@@ -73,5 +90,6 @@ public class PersonsController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
+        personService.delete(personService.findById(id).orElseThrow(()->new NotFoundException(Person.class,id)));
     }
 }
